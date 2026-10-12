@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Articles Plus - {{ publisher.name }}{% endblock %}
+{% block content %}
+{% if error %}
+    <div class="alert alert-bt-error" role="alert">{{ error }}</div>
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">{{ publisher.name }}</h1>
+
+    <div class="d-flex gap-2">
+        {% if request.user.role == 'READER' %}
+            <a href="{% url 'ArticlesAndMore:toggle_publisher_subscription' pk=publisher.pk %}"
+               class="btn {% if is_subscribed %}btn-outline-danger{% else %}btn-bt-primary{% endif %}">
+                {% if is_subscribed %}Unsubscribe{% else %}Subscribe{% endif %}
+            </a>
+        {% endif %}
+        {% if can_join %}
+            <a href="{% url 'ArticlesAndMore:publisher_assign_self' pk=publisher.pk %}" class="btn btn-bt-accent">
+                Assign myself as editor
+            </a>
+        {% endif %}
+        {% if can_manage_staff %}
+            <a href="{% url 'ArticlesAndMore:publisher_assign_journalist' pk=publisher.pk %}" class="btn btn-bt-accent">
+                Assign Journalist
+            </a>
+        {% endif %}
+        {% if can_leave %}
+            <a href="{% url 'ArticlesAndMore:publisher_leave' pk=publisher.pk %}" class="btn btn-outline-danger">
+                Leave this publisher
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card bt-card h-100 p-3">
+            <p class="fw-semibold mb-2">Editors</p>
+            {% if publisher.editors.all %}
+                <ul class="mb-0">
+                    {% for editor in publisher.editors.all %}
+                        <li>{{ editor.username }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted mb-0">No editors assigned yet.</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bt-card h-100 p-3">
+            <p class="fw-semibold mb-2">Journalists</p>
+            {% if publisher.journalists.all %}
+                <ul class="list-unstyled mb-0">
+                    {% for journalist in publisher.journalists.all %}
+                        <li class="d-flex justify-content-between align-items-center mb-1">
+                            <span>{{ journalist.username }}</span>
+                            {% if can_manage_staff %}
+                                <a href="{% url 'ArticlesAndMore:publisher_remove_journalist' pk=publisher.pk journalist_id=journalist.pk %}"
+                                   class="btn btn-sm btn-outline-danger">Remove</a>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted mb-0">No journalists assigned yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<h2 class="mb-3">Articles</h2>
+{% if publisher.articles.all %}
+<div class="row g-3 mb-4">
+    {% for article in publisher.articles.all %}
+    <div class="col-md-4">
+        <div class="card bt-card h-100 p-3">
+            <a href="{% url 'ArticlesAndMore:article_detail' pk=article.pk %}"
+               class="fw-semibold text-decoration-none">{{ article.title }}</a>
+            <p class="text-muted small mb-0">By {{ article.author.username|default:'Unknown' }}</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">No articles from this publisher yet.</p>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{% url 'ArticlesAndMore:publisher_list' %}" class="btn btn-outline-secondary">Back to Publishers</a>
+</div>
+{% endblock %}

@@ -1,0 +1,461 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuthApp.views &mdash; NewsFeedApp 00.00.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d7bb8d4d"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NewsFeedApp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">ArticlesAndMore</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../NewsFeedApp.html">NewsFeedApp package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../AuthApp.html">AuthApp package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ArticlesAndMore.html">ArticlesAndMore package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NewsFeedApp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">AuthApp.views</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for AuthApp.views</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Views for AuthApp: login, registration, logout, and the password-reset</span>
+<span class="sd">flow (request reset -&gt; emailed link -&gt; set new password).</span>
+<span class="sd">"""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.shortcuts</span><span class="w"> </span><span class="kn">import</span> <span class="n">render</span><span class="p">,</span> <span class="n">redirect</span>  <span class="c1"># To show HTML pages and redirect users</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">authenticate</span><span class="p">,</span>
+    <span class="n">get_user_model</span><span class="p">,</span>
+    <span class="n">login</span><span class="p">,</span>
+    <span class="n">logout</span><span class="p">,</span>
+<span class="p">)</span>  <span class="c1"># Functions to handle login and logout</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.http</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">HttpResponseRedirect</span><span class="p">,</span>
+    <span class="n">HttpResponse</span><span class="p">,</span>
+<span class="p">)</span>  <span class="c1"># For redirecting users or sending responses</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.urls</span><span class="w"> </span><span class="kn">import</span> <span class="n">reverse</span><span class="p">,</span> <span class="n">reverse_lazy</span>  <span class="c1"># Helps get URLs by their names</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">login_required</span><span class="p">,</span>
+<span class="p">)</span>  <span class="c1"># Makes sure only logged-in users can access pages</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">secrets</span>  <span class="c1"># For generating secure random tokens</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timedelta</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hashlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">sha1</span>  <span class="c1"># To hash tokens securely</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>  <span class="c1"># Better way to handle dates and times in Django</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.core.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ObjectDoesNotExist</span><span class="p">,</span>
+<span class="p">)</span>  <span class="c1"># For handling cases when an object is not found</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">generate_reset_url</span><span class="p">,</span>
+    <span class="n">build_email</span><span class="p">,</span>
+<span class="p">)</span>  <span class="c1"># Helper functions for email and token generation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResetToken</span>  <span class="c1"># Our custom model to store reset tokens</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.core.mail</span><span class="w"> </span><span class="kn">import</span> <span class="n">EmailMessage</span>  <span class="c1"># To send emails</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.hashers</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_password</span>  <span class="c1"># To hash passwords before saving</span>
+
+<span class="n">User</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">get_user_model</span><span class="p">()</span>
+<span class="p">)</span>  <span class="c1"># Resolves to the project's custom User model (ArticlesAndMore.User)</span>
+
+
+<span class="c1"># This function handles user login</span>
+<div class="viewcode-block" id="login_user">
+<a class="viewcode-back" href="../../AuthApp.html#AuthApp.views.login_user">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">login_user</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Show the login form on GET; on POST, authenticate the submitted</span>
+<span class="sd">    username/password, log the user in, extend their session to expire</span>
+<span class="sd">    on 30 Dec 2026, and redirect to the welcome page. Re-shows the form</span>
+<span class="sd">    with an error on invalid credentials."""</span>
+    <span class="c1"># When the login form is submitted</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"POST"</span><span class="p">:</span>
+        <span class="c1"># Get username and password from the form</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"username"</span><span class="p">)</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"password"</span><span class="p">)</span>
+
+        <span class="c1"># Check if the username and password match a user in the database</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">authenticate</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">login</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>  <span class="c1"># Log the user in and start their session</span>
+
+            <span class="c1"># Set the session to expire on 30 Dec 2026 (so user stays logged in until then)</span>
+            <span class="n">exp_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+            <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            <span class="n">expiry_seconds</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">exp_date</span> <span class="o">-</span> <span class="n">now</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">expiry_seconds</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">set_expiry</span><span class="p">(</span>
+                    <span class="n">expiry_seconds</span>
+                <span class="p">)</span>  <span class="c1"># Set the expiry time for the session</span>
+
+            <span class="c1"># Save some user info in the session (optional, but useful)</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">"user_id"</span><span class="p">]</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">"username"</span><span class="p">]</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">username</span>
+
+            <span class="c1"># Redirect user to the welcome page after successful login</span>
+            <span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s2">"AuthApp:welcome"</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># If login failed, reload login page with an error message</span>
+            <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span> <span class="s2">"AuthApp/login.html"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"Invalid credentials"</span><span class="p">}</span>
+            <span class="p">)</span>
+
+    <span class="c1"># If the user just opened the login page, show the login form</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"AuthApp/login.html"</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># This function handles user registration (signing up)</span>
+<div class="viewcode-block" id="register_user">
+<a class="viewcode-back" href="../../AuthApp.html#AuthApp.views.register_user">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">register_user</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Show the registration form on GET; on POST, validate the submitted</span>
+<span class="sd">    data (matching passwords, unique email, valid role), create the User</span>
+<span class="sd">    with that role, log them in, and redirect to the welcome page."""</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"POST"</span><span class="p">:</span>
+        <span class="c1"># Get data from the form</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"username"</span><span class="p">)</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"password"</span><span class="p">)</span>
+        <span class="n">confpassword</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"password_confirmation"</span><span class="p">)</span>
+        <span class="n">email</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"email"</span><span class="p">)</span>
+        <span class="c1"># Form values are lowercase ('reader'/'journalist'/'editor'); the</span>
+        <span class="c1"># User.Role choices are uppercase, so normalise before using it.</span>
+        <span class="n">role</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">password</span> <span class="o">!=</span> <span class="n">confpassword</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="s2">"AuthApp/register.html"</span><span class="p">,</span>
+                <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"Passwords do not match. Please try again."</span><span class="p">},</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Check for the same email on an exisitng account</span>
+        <span class="n">email_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s2">"email"</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">email</span> <span class="ow">in</span> <span class="n">email_list</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="s2">"AuthApp/register.html"</span><span class="p">,</span>
+                <span class="p">{</span>
+                    <span class="s2">"error"</span><span class="p">:</span> <span class="s2">"Email already associated with an account. Please use another email."</span>
+                <span class="p">},</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Check for the same username on an exisitng account</span>
+        <span class="n">name_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s2">"username"</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">username</span> <span class="ow">in</span> <span class="n">name_list</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="s2">"AuthApp/register.html"</span><span class="p">,</span>
+                <span class="p">{</span>
+                    <span class="s2">"error"</span><span class="p">:</span> <span class="s2">"Username already associated with an account. Please use another username."</span>
+                <span class="p">},</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">role</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">User</span><span class="o">.</span><span class="n">Role</span><span class="o">.</span><span class="n">values</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="s2">"AuthApp/register.html"</span><span class="p">,</span>
+                <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"Please select a valid role."</span><span class="p">},</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Create the user against the project's custom User model and set role.</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create_user</span><span class="p">(</span>
+            <span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="n">email</span>
+        <span class="p">)</span>
+        <span class="n">user</span><span class="o">.</span><span class="n">role</span> <span class="o">=</span> <span class="n">role</span>
+        <span class="n">user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="n">login</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>  <span class="c1"># Log the new user in automatically</span>
+
+        <span class="c1"># Redirect to welcome page after registration</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s2">"AuthApp:welcome"</span><span class="p">))</span>
+
+    <span class="c1"># If user visits registration page, show the registration form</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"AuthApp/register.html"</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Helper function to change a user's password securely</span>
+<div class="viewcode-block" id="change_user_password">
+<a class="viewcode-back" href="../../AuthApp.html#AuthApp.views.change_user_password">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">change_user_password</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">new_password</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Set and save a new (hashed) password for the user with the given</span>
+<span class="sd">    username. Not called anywhere in this app yet - kept as a small</span>
+<span class="sd">    reusable helper for the reset flow."""</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">)</span>  <span class="c1"># Find user by username</span>
+
+    <span class="n">user</span><span class="o">.</span><span class="n">set_password</span><span class="p">(</span><span class="n">new_password</span><span class="p">)</span>  <span class="c1"># Set the new password (hashed automatically)</span>
+
+    <span class="n">user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>  <span class="c1"># Save changes to the database</span></div>
+
+
+
+<span class="c1"># Logs the user out and redirects to login page</span>
+<div class="viewcode-block" id="logout_user">
+<a class="viewcode-back" href="../../AuthApp.html#AuthApp.views.logout_user">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">logout_user</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Log out the current user and redirect to the login page."""</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">logout</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>  <span class="c1"># Log out the current user</span>
+        <span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s2">"AuthApp:login"</span><span class="p">))</span></div>
+
+
+
+<span class="c1"># Only logged-in users can see the welcome page</span>
+<div class="viewcode-block" id="welcome">
+<a class="viewcode-back" href="../../AuthApp.html#AuthApp.views.welcome">[docs]</a>
+<span class="nd">@login_required</span><span class="p">(</span><span class="n">login_url</span><span class="o">=</span><span class="n">reverse_lazy</span><span class="p">(</span><span class="s2">"AuthApp:login"</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">welcome</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Show the welcome/landing page for a logged-in user."""</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"AuthApp/welcome.html"</span><span class="p">)</span>  <span class="c1"># Show the welcome page</span></div>
+
+
+
+<span class="c1"># Creates the email object to send for password reset</span>
+<div class="viewcode-block" id="build_email">
+<a class="viewcode-back" href="../../AuthApp.html#AuthApp.views.build_email">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_email</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">reset_url</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Build (but don't send) the password-reset email for a user,</span>
+<span class="sd">    containing the given reset URL."""</span>
+    <span class="n">subject</span> <span class="o">=</span> <span class="s2">"Password Reset"</span>
+    <span class="n">user_email</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">email</span>
+    <span class="n">domain_email</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">EMAIL_HOST_USER</span>  <span class="c1"># The "from" email address for the email</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Hi </span><span class="si">{</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="s2">,</span><span class="se">\n</span><span class="s2">Here is your link to reset your password: </span><span class="si">{</span><span class="n">reset_url</span><span class="si">}</span><span class="s2">"</span>
+
+    <span class="n">email</span> <span class="o">=</span> <span class="n">EmailMessage</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">domain_email</span><span class="p">,</span> <span class="p">[</span><span class="n">user_email</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">email</span></div>
+
+
+
+<span class="c1"># Creates a secure reset URL with a token that expires in 5 minutes</span>
+<div class="viewcode-block" id="generate_reset_url">
+<a class="viewcode-back" href="../../AuthApp.html#AuthApp.views.generate_reset_url">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_reset_url</span><span class="p">(</span><span class="n">user</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Create a ResetToken for the user (hashed, expiring in 5 minutes)</span>
+<span class="sd">    and return the full password-reset URL containing the raw token."""</span>
+    <span class="n">domain</span> <span class="o">=</span> <span class="s2">"http://127.0.0.1:8000"</span>
+
+    <span class="n">token</span> <span class="o">=</span> <span class="n">secrets</span><span class="o">.</span><span class="n">token_urlsafe</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>  <span class="c1"># Generate a random secure token</span>
+
+    <span class="n">expiry_date</span> <span class="o">=</span> <span class="n">timezone</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># Token expires in 5 minutes</span>
+
+    <span class="n">hashed_token</span> <span class="o">=</span> <span class="n">sha1</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>  <span class="c1"># Hash the token to store securely</span>
+
+    <span class="c1"># Save the hashed token and expiry date to the database</span>
+    <span class="n">reset_token</span> <span class="o">=</span> <span class="n">ResetToken</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">token</span><span class="o">=</span><span class="n">hashed_token</span><span class="p">,</span> <span class="n">expiry_date</span><span class="o">=</span><span class="n">expiry_date</span>
+    <span class="p">)</span>
+
+    <span class="n">path</span> <span class="o">=</span> <span class="n">reverse</span><span class="p">(</span><span class="s2">"AuthApp:password_reset_form"</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"token"</span><span class="p">:</span> <span class="n">token</span><span class="p">})</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">domain</span><span class="si">}{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">return</span> <span class="n">url</span></div>
+
+
+
+<span class="c1"># Handles sending the password reset email after user submits their email</span>
+<div class="viewcode-block" id="send_password_reset">
+<a class="viewcode-back" href="../../AuthApp.html#AuthApp.views.send_password_reset">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">send_password_reset</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Show the 'request a reset' form on GET; on POST, generate and</span>
+<span class="sd">    email a reset link if the address matches a user. Always shows the</span>
+<span class="sd">    same confirmation page regardless of whether the email matched, so</span>
+<span class="sd">    the response can't be used to enumerate registered emails."""</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"POST"</span><span class="p">:</span>
+        <span class="n">user_email</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"email"</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">email</span><span class="o">=</span><span class="n">user_email</span><span class="p">)</span>  <span class="c1"># Find user by email</span>
+            <span class="n">reset_url</span> <span class="o">=</span> <span class="n">generate_reset_url</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>  <span class="c1"># Generate reset link with token</span>
+            <span class="n">email</span> <span class="o">=</span> <span class="n">build_email</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">reset_url</span><span class="p">)</span>  <span class="c1"># Create the email message</span>
+            <span class="n">email</span><span class="o">.</span><span class="n">send</span><span class="p">()</span>  <span class="c1"># Send the email</span>
+
+            <span class="c1"># Show a confirmation page that email was sent</span>
+            <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span> <span class="s2">"AuthApp/reset_email_sent.html"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"email"</span><span class="p">:</span> <span class="n">user_email</span><span class="p">}</span>
+            <span class="p">)</span>
+
+        <span class="k">except</span> <span class="n">ObjectDoesNotExist</span><span class="p">:</span>
+            <span class="c1"># Even if no user found, still show confirmation (to avoid info leaks)</span>
+            <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span> <span class="s2">"AuthApp/reset_email_sent.html"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"email"</span><span class="p">:</span> <span class="n">user_email</span><span class="p">}</span>
+            <span class="p">)</span>
+
+    <span class="c1"># Show the form where user can enter their email</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"AuthApp/request_password_reset.html"</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># This view is called when user clicks the reset link in their email</span>
+<div class="viewcode-block" id="reset_user_password">
+<a class="viewcode-back" href="../../AuthApp.html#AuthApp.views.reset_user_password">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reset_user_password</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">token</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Validate the reset token from the URL: show the expired-token page</span>
+<span class="sd">    if it's expired, the invalid-token page if it doesn't exist, or</span>
+<span class="sd">    otherwise stash the user/token in the session and show the</span>
+<span class="sd">    new-password form."""</span>
+    <span class="n">hashed_token</span> <span class="o">=</span> <span class="n">sha1</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>  <span class="c1"># Hash the token from URL</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">user_token</span> <span class="o">=</span> <span class="n">ResetToken</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">token</span><span class="o">=</span><span class="n">hashed_token</span><span class="p">)</span>  <span class="c1"># Look for token in DB</span>
+
+        <span class="c1"># Check if the token expired</span>
+        <span class="c1"># if user_token.expiry_date.replace(tzinfo=None) &lt; datetime.now():</span>
+        <span class="k">if</span> <span class="n">user_token</span><span class="o">.</span><span class="n">expiry_date</span> <span class="o">&lt;</span> <span class="n">timezone</span><span class="o">.</span><span class="n">now</span><span class="p">():</span>
+            <span class="n">user_token</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>  <span class="c1"># Delete expired token</span>
+            <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span> <span class="s2">"AuthApp/password_reset_expired.html"</span>
+            <span class="p">)</span>  <span class="c1"># Show expired token message</span>
+
+        <span class="c1"># Save user ID and token in session to verify next step</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">"user_id"</span><span class="p">]</span> <span class="o">=</span> <span class="n">user_token</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">id</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">"reset_token"</span><span class="p">]</span> <span class="o">=</span> <span class="n">token</span>
+
+        <span class="c1"># Show the password reset form</span>
+        <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"AuthApp/password_reset.html"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"token"</span><span class="p">:</span> <span class="n">token</span><span class="p">})</span>
+
+    <span class="k">except</span> <span class="n">ResetToken</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="c1"># Token not found or already used</span>
+        <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"AuthApp/password_reset_invalid.html"</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Handles the password reset form submission (when user enters new password)</span>
+<div class="viewcode-block" id="reset_password">
+<a class="viewcode-back" href="../../AuthApp.html#AuthApp.views.reset_password">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reset_password</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Handle the new-password form submission: validate the session</span>
+<span class="sd">    data and matching passwords, re-check the token hasn't expired, then</span>
+<span class="sd">    update the user's password, delete the used token, clear the</span>
+<span class="sd">    session, and redirect to login. Redirects to login on GET."""</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"POST"</span><span class="p">:</span>
+        <span class="n">user_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"user_id"</span><span class="p">)</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"reset_token"</span><span class="p">)</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"password"</span><span class="p">)</span>
+        <span class="n">password_conf</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"password_conf"</span><span class="p">)</span>
+
+        <span class="c1"># Check if all required data is present</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">user_id</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">password_conf</span><span class="p">]):</span>
+            <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="s2">"AuthApp/password_reset.html"</span><span class="p">,</span>
+                <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"Missing fields or session expired."</span><span class="p">,</span> <span class="s2">"token"</span><span class="p">:</span> <span class="n">token</span><span class="p">},</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Check if passwords match</span>
+        <span class="k">if</span> <span class="n">password</span> <span class="o">!=</span> <span class="n">password_conf</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="s2">"password_reset.html"</span><span class="p">,</span>
+                <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"Passwords do not match."</span><span class="p">,</span> <span class="s2">"token"</span><span class="p">:</span> <span class="n">token</span><span class="p">},</span>
+            <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">user_id</span><span class="p">)</span>  <span class="c1"># Find user by user_id</span>
+            <span class="n">hashed_token</span> <span class="o">=</span> <span class="n">sha1</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+            <span class="n">reset_token</span> <span class="o">=</span> <span class="n">ResetToken</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">token</span><span class="o">=</span><span class="n">hashed_token</span><span class="p">)</span>
+
+            <span class="c1"># Check token expiry again (just to be sure)</span>
+            <span class="k">if</span> <span class="n">reset_token</span><span class="o">.</span><span class="n">expiry_date</span> <span class="o">&lt;</span> <span class="n">timezone</span><span class="o">.</span><span class="n">now</span><span class="p">():</span>
+                <span class="n">reset_token</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+                <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"AuthApp/password_reset_expired.html"</span><span class="p">)</span>
+
+            <span class="c1"># Update the user's password (hashed securely)</span>
+            <span class="n">user</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">make_password</span><span class="p">(</span><span class="n">password</span><span class="p">)</span>
+            <span class="n">user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+            <span class="c1"># Delete the token and clear session info</span>
+            <span class="n">reset_token</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+            <span class="c1"># Redirect user to login page after successful password reset</span>
+            <span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s2">"AuthApp:login"</span><span class="p">))</span>
+
+        <span class="k">except</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">,</span> <span class="n">ResetToken</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"password_reset_invalid.html"</span><span class="p">)</span>
+
+    <span class="c1"># If the page was accessed with GET or any other method, redirect to login page</span>
+    <span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s2">"AuthApp:login"</span><span class="p">))</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Delano de Wet.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

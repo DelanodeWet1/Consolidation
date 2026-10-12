@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}BuyThings - Search Product{% endblock %}
+{% block content %}
+<h1 class="mb-4">🔍 Product Page</h1>
+
+{% if error %}
+    <div class="alert alert-bt-error" role="alert">{{ error }}</div>
+{% endif %}
+
+{% if product %}
+    <div class="card bt-card shadow-sm p-4">
+        <h2>{{ product.name }}</h2>
+        <p><strong>Description:</strong> {{ product.description }}</p>
+        <p><strong>Price:</strong> R{{ product.price }}</p>
+        <p><strong>Stock:</strong> {{ product.stock }}</p>
+        <p><strong>Store:</strong> {{ product.store }}</p>
+    </div>
+{% else %}
+    <div class="card bt-card shadow-sm p-4" style="max-width: 500px;">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="product" class="form-label">Enter product name</label>
+                <input type="text" id="product" name="product" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-bt-primary">View Product</button>
+        </form>
+    </div>
+{% endif %}
+
+<div class="d-flex flex-wrap gap-2 mt-4">
+    <a href="{% url 'eCommerce:products_list' %}" class="btn btn-outline-secondary">🏪 Back to Catalog</a>
+    <a href="{% url 'eCommerce:main_cart_page' %}" class="btn btn-outline-secondary">🛒 View Cart</a>
+    <a href="{% url 'eCommerce:change_price' %}" class="btn btn-outline-secondary">💰 Change Price</a>
+</div>
+{% endblock %}

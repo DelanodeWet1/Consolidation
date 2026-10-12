@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Articles Plus - Publishers{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Publishers</h1>
+    {% if request.user.role == 'EDITOR' %}
+        <a href="{% url 'ArticlesAndMore:publisher_create' %}" class="btn btn-bt-accent">Create Publisher</a>
+    {% endif %}
+</div>
+
+{% if error %}
+    <div class="alert alert-bt-error" role="alert">{{ error }}</div>
+{% endif %}
+
+{% if publishers %}
+<div class="row g-3">
+    {% for publisher in publishers %}
+    {% if request.user.role == 'JOURNALIST' and request.user.publisher_j == publisher or request.user.role != 'JOURNALIST' %}
+    <div class="col-md-4">
+        <div class="card bt-card h-100 p-3">
+            <a href="{% url 'ArticlesAndMore:publisher_detail' pk=publisher.pk %}"
+               class="fw-semibold fs-5 mb-2 text-decoration-none">{{ publisher.name }}</a>
+            {% if request.user.role == 'READER' %}
+                <a href="{% url 'ArticlesAndMore:toggle_publisher_subscription' pk=publisher.pk %}"
+                   class="btn btn-sm {% if publisher.pk in subscribed_ids %}btn-outline-danger{% else %}btn-bt-primary{% endif %} mt-2">
+                    {% if publisher.pk in subscribed_ids %}Unsubscribe{% else %}Subscribe{% endif %}
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    {% empty %}
+    <p>No publishers to display.</p>
+    {% endfor %}
+</div>
+{% else %}
+<p>No publishers to display.</p>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{% url 'AuthApp:welcome' %}" class="btn btn-outline-secondary">Back Home</a>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}BuyThings - Reset Email Sent{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <div class="card bt-card shadow-sm p-4">
+            <h2 class="mb-3">Reset Email Sent</h2>
+            <p>If an account with email {{ email }} exists, a password reset link has been sent. Please check your inbox.</p>
+            <a href="{% url 'AuthApp:login' %}" class="btn btn-bt-primary">Return to Login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Articles Plus - Journalists{% endblock %}
+{% block content %}
+<h1 class="mb-4">Journalists</h1>
+
+{% if error %}
+    <div class="alert alert-bt-error" role="alert">{{ error }}</div>
+{% endif %}
+
+{% if journalists %}
+<div class="row g-3">
+    {% for journalist in journalists %}
+    {% if request.user.role == 'JOURNALIST' and request.user == journalist or request.user.role != 'JOURNALIST' %}
+    <div class="col-md-4">
+        <div class="card bt-card h-100 p-3">
+            <p class="fw-semibold fs-5 mb-2">{{ journalist.username }}</p>
+            {% if request.user.role == 'READER' %}
+                <a href="{% url 'ArticlesAndMore:toggle_journalist_subscription' pk=journalist.pk %}"
+                   class="btn btn-sm {% if journalist.pk in subscribed_ids %}btn-outline-danger{% else %}btn-bt-primary{% endif %}">
+                    {% if journalist.pk in subscribed_ids %}Unsubscribe{% else %}Subscribe{% endif %}
+                </a>
+            {% endif %}
+    
+        </div>
+    </div>
+    {% endif %}
+    {% empty %}
+    <p>No journalists to display.</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{% url 'AuthApp:welcome' %}" class="btn btn-outline-secondary">Back Home</a>
+</div>
+{% endblock %}

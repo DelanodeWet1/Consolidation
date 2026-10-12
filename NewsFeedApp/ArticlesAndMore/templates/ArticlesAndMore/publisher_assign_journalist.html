@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Articles Plus - Assign Journalist{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card bt-card shadow-sm p-4">
+            {% if error %}
+                <div class="alert alert-bt-error" role="alert">{{ error }}</div>
+            {% endif %}
+            <h2 class="mb-2">Assign Journalist</h2>
+            <p class="text-muted">Assign a journalist to {{ publisher.name }}.</p>
+            {% if form.journalist.field.queryset %}
+                <form method="post" action="{% url 'ArticlesAndMore:publisher_assign_journalist' pk=publisher.pk %}">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-bt-primary">Assign</button>
+                </form>
+            {% else %}
+                <p class="text-muted mb-0">There are no unassigned journalists to add right now.</p>
+            {% endif %}
+        </div>
+        <a href="{% url 'ArticlesAndMore:publisher_detail' pk=publisher.pk %}" class="btn btn-outline-secondary mt-3">Back to {{ publisher.name }}</a>
+    </div>
+</div>
+{% endblock %}

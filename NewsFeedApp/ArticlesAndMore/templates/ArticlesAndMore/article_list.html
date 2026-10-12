@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Articles Plus - Article Archive{% endblock %}
+{% block content %}
+<h1 class="mb-4">Article Archive</h1>
+
+{% if error %}
+    <div class="alert alert-bt-error" role="alert">{{ error }}</div>
+{% endif %}
+
+{% if perms.ArticlesAndMore.add_articles %}
+    <a href="{% url 'ArticlesAndMore:article_create' %}" class="btn btn-bt-primary mb-3">+ New Article</a>
+{% endif %}
+
+{% if articles %}
+<div class="row g-3">
+    {% for article in articles %}
+    <div class="col-md-4">
+        <div class="card bt-card h-100 p-3">
+            <a href="{% url 'ArticlesAndMore:article_detail' pk=article.pk %}" class="fw-semibold fs-5 text-decoration-none">
+                {{ article.title }}
+            </a>
+            <p class="text-muted mt-2 mb-0"><strong>Author:</strong> {{ article.author }}</p>
+            <p class="text-muted mt-2 mb-0"><strong>Publisher:</strong> {{ article.publisher }}</p>
+            <p class="text-muted mt-2 mb-0">{{ article.created_at }}</p>
+            {% if request.user.role != 'READER' %}
+                <p class="text-muted mt-2 mb-0">
+                    <strong>{% if article.approved %}Approved{% else %}Not Approved{% endif %}</strong>
+                </p>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <p>No articles to display.</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="d-flex flex-wrap gap-2 mt-4">
+    <a href="{% url 'ArticlesAndMore:newsletter_list' %}" class="btn btn-outline-secondary">View Newsletters</a>
+    <a href="{% url 'AuthApp:welcome' %}" class="btn btn-outline-secondary">Back Home</a>
+</div>
+{% endblock %}

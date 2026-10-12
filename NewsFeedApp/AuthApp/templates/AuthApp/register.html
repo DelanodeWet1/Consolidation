@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Articles Plus - Register{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card bt-card shadow-sm p-4">
+            <h2 class="mb-4 text-center">Register An Account</h2>
+
+            <form method="POST" action="{% url 'AuthApp:register' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password Confirmation</label>
+                    <input type="password" name="password_confirmation" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Role</label>
+                    <select name="role" class="form-select" required>
+                        <option value="" disabled selected>Select a role</option>
+                        <option value="reader">Reader</option>
+                        <option value="journalist">Journalist</option>
+                        <option value="editor">Editor</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-bt-primary w-100">Register</button>
+            </form>
+
+            {% if error %}
+                <div class="alert alert-bt-error mt-3" role="alert">{{ error }}</div>
+            {% endif %}
+
+            <p class="text-center mt-3 mb-0">
+                Already have an account? <a href="{% url 'AuthApp:login' %}">Login here</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

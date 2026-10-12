@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Articles Plus - Create Publisher{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card bt-card shadow-sm p-4">
+            {% if error %}
+                <div class="alert alert-bt-error" role="alert">{{ error }}</div>
+            {% endif %}
+            <h2 class="mb-4">Create Publisher</h2>
+            <p class="text-muted">You'll be assigned as this publisher's editor automatically.</p>
+            <form method="post" action="{% url 'ArticlesAndMore:publisher_create' %}">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-bt-primary">Create</button>
+            </form>
+        </div>
+        <a href="{% url 'ArticlesAndMore:publisher_list' %}" class="btn btn-outline-secondary mt-3">Back to Publishers</a>
+    </div>
+</div>
+{% endblock %}

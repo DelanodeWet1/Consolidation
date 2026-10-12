@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Articles Plus - Newsletter Archive{% endblock %}
+{% block content %}
+<h1 class="mb-4">Newsletter Archive</h1>
+
+{% if error %}
+    <div class="alert alert-bt-error" role="alert">{{ error }}</div>
+{% endif %}
+
+{% if perms.ArticlesAndMore.add_newsletters %}
+    <a href="{% url 'ArticlesAndMore:newsletter_create' %}" class="btn btn-bt-primary mb-3">+ New Newsletter</a>
+{% endif %}
+
+{% if newsletters %}
+<div class="row g-3">
+    {% for newsletter in newsletters %}
+    <div class="col-md-4">
+        <div class="card bt-card h-100 p-3">
+            <a href="{% url 'ArticlesAndMore:newsletter_detail' pk=newsletter.pk %}" class="fw-semibold fs-5 text-decoration-none">
+                {{ newsletter.title }}
+            </a>
+            <p class="text-muted mt-2 mb-0"><strong>Author:</strong> {{ newsletter.author }}</p>
+            <p class="text-muted mt-2 mb-0"><strong>Publisher:</strong> {{ newsletter.publisher }}</p>
+            <p class="text-muted mt-2 mb-0"><strong>Articles included:</strong> {{ newsletter.articles.count }}</p>
+            <p class="text-muted mt-2 mb-0">{{ newsletter.created_at }}</p>
+        </div>
+    </div>
+    {% empty %}
+    <p>No newsletters to display.</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="d-flex flex-wrap gap-2 mt-4">
+    <a href="{% url 'ArticlesAndMore:article_list' %}" class="btn btn-outline-secondary">View Articles</a>
+    <a href="{% url 'AuthApp:welcome' %}" class="btn btn-outline-secondary">Back Home</a>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Articles Plus - {{ newsletter.title }}{% endblock %}
+{% block content %}
+{% if error %}
+    <div class="alert alert-bt-error" role="alert">{{ error }}</div>
+{% endif %}
+
+<div class="card bt-card shadow-sm p-4 mb-4">
+    <h2>{{ newsletter.title }}</h2>
+    <p class="text-muted">{{ newsletter.created_at }}</p>
+    <p><strong>Author:</strong> {{ newsletter.author }}</p>
+    <p><strong>Publisher:</strong> {{ newsletter.publisher }}</p>
+    <p class="text-muted">{{ newsletter.description }}</p>
+
+    <h4 class="mt-4">Articles in this newsletter</h4>
+    {% if articles %}
+        <ul class="list-group list-group-flush mb-3">
+            {% for article in articles %}
+            <li class="list-group-item">
+                <a href="{% url 'ArticlesAndMore:article_detail' pk=article.pk %}">{{ article.title }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No articles have been added to this newsletter yet.</p>
+    {% endif %}
+
+    <div class="d-flex flex-wrap gap-2 mt-3">
+        <a href="{% url 'ArticlesAndMore:newsletter_list' %}" class="btn btn-outline-secondary">Back to Archive</a>
+        {% if request.user == newsletter.author or request.user.role == 'EDITOR' %}
+            <a href="{% url 'ArticlesAndMore:newsletter_update' pk=newsletter.pk %}" class="btn btn-bt-primary">Edit newsletter</a>
+            <a href="{% url 'ArticlesAndMore:newsletter_delete' pk=newsletter.pk %}" class="btn btn-outline-danger">Delete newsletter</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

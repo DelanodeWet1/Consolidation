@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Articles Plus - Welcome{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <div class="card bt-card shadow-sm p-5">
+            <h1 class="mb-2">Welcome, {{ request.user.username }}!</h1>
+            <p class="text-muted mb-4">You are now logged in.</p>
+
+            <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
+                <a href="{% url 'ArticlesAndMore:article_list' %}" class="btn btn-bt-primary">Articles</a>
+                <a href="{% url 'ArticlesAndMore:newsletter_list' %}" class="btn btn-bt-primary">Newsletters</a>
+                <a href="{% url 'ArticlesAndMore:publisher_list' %}" class="btn btn-bt-primary">Publishers</a>
+                <a href="{% url 'ArticlesAndMore:journalist_list' %}" class="btn btn-bt-primary">Journalists</a>
+            </div>
+
+            <form method="POST" action="{% url 'AuthApp:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-secondary">Logout</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}BuyThings - Login{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card bt-card shadow-sm p-4">
+            <h2 class="mb-4 text-center">Login</h2>
+
+            {% if error %}
+                <div class="alert alert-bt-error" role="alert">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="{% url 'AuthApp:login' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-bt-primary w-100">Login</button>
+            </form>
+
+            <p class="text-center mt-3">
+                <a href="{% url 'AuthApp:request_password_reset' %}">Forgot your password?</a>
+            </p>
+
+            <hr>
+            <p class="text-center mb-2">Don't have an account?</p>
+            <a href="{% url 'AuthApp:register' %}" class="btn btn-bt-accent w-100">Register here</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
