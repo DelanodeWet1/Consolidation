@@ -1,0 +1,49 @@
+ini
+# --- Git and Version Control ---
+.git
+.gitignore
+.github
+
+# --- Python Artifacts ---
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+newsfeedenv/
+.newsfeedenv/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# --- Django Specifics ---
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# --- Environment and Secrets ---
+.env
+*.env
+secrets.json
+
+# --- Docker Files ---
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# --- IDEs and Text Editors ---
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# --- OS Overhead ---
+.DS_Store
+Thumbs.db
