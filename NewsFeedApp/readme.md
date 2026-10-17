@@ -9,7 +9,14 @@ This guide assumes no prior Django experience. Follow the steps in order, copyin
 
 You may find the project avialable for download at the following public repo: https://github.com/DelanodeWet1/NewsFeedApp
 
+There are two ways to run the project:
+
+- **With Docker** - nothing to install except Docker itself. See [Running with Docker](#running-with-docker).
+- **Manually** - steps 1-10 below, which need Python and MySQL installed on your machine.
+
 ## Prerequisites
+
+*These prerequisites are for the manual setup. If you're using Docker, skip to [Running with Docker](#running-with-docker).*
 
 Before you start, make sure you have installed:
 
@@ -188,6 +195,110 @@ The Django admin panel, if you created a superuser, is available at `http://127.
 
 ---
 
+## Running with Docker
+
+Docker runs the app and its MariaDB database in containers, so you don't need Python, MySQL, or a virtual environment on your machine - only Docker. The project includes a `Dockerfile` (builds the Django app image) and a `docker-compose.yml` (runs the app and the database together).
+
+### Docker prerequisites
+
+- **Docker** with Docker Compose - on Windows and macOS, install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Compose is included); on Linux, install Docker Engine and the Compose plugin.
+- **Git**
+
+Check that Docker is installed:
+
+```bash
+docker --version
+docker compose version
+```
+
+(Very old Docker installations use `docker-compose` with a hyphen instead of `docker compose`.)
+
+### Clone the project
+
+Follow steps 1 and 2 above to clone the project and enter the folder. Make sure your terminal is in the folder containing both `manage.py` and `docker-compose.yml`.
+
+### Create your `.env` file
+
+Copy the example file, exactly as in step 6.1:
+
+```bash
+# macOS / Linux
+cp .env.example .env
+
+# Windows (Command Prompt)
+copy .env.example .env
+```
+
+Then generate a secret key. Use this command rather than the one in step 6.2 - it only produces letters, digits, `-` and `_`, whereas Django's own generator can output `$`, which Docker Compose treats as a special character in `.env` files:
+
+```bash
+docker run --rm python:3.12-slim python -c "import secrets; print(secrets.token_urlsafe(50))"
+```
+
+(If you have Python installed locally, `python -c "import secrets; print(secrets.token_urlsafe(50))"` does the same thing.)
+
+Open `.env` and fill it in:
+
+```ini
+DJANGO_SECRET_KEY=<the key you generated above>
+DJANGO_DEBUG=True
+DJANGO_ALLOWED_HOSTS=
+
+DB_NAME=newsfeedapp_db
+DB_USER=root
+DB_PASSWORD=<choose a password>
+DB_HOST=localhost
+DB_PORT=
+```
+
+- **`DJANGO_DEBUG`** - keep this as `True`. The container uses Django's development server, which only serves static files (such as the site's CSS) in debug mode.
+- **`DB_NAME`** - leave as `newsfeedapp_db`. The database container creates it for you; there's no need to create it by hand as in step 5.
+- **`DB_USER`** - keep this as `root`. The database container is created with `root` as its only user.
+- **`DB_PASSWORD`** - choose any password. The database container is created with it the first time it starts, so you're setting a new password here, not entering an existing one. Avoid `$` characters. If you change it later, run `docker compose down -v` first (see below), because the database keeps the password it was first created with.
+- **`DB_HOST`** / **`DB_PORT`** - leave as shown. Docker Compose overrides `DB_HOST` so the app finds the database container, and the default port is used.
+
+### Build and start the containers
+
+```bash
+docker compose up --build
+```
+
+The first run downloads the base images and builds the app image, which can take a few minutes. After that, Docker starts the database, waits until it's ready, applies the migrations automatically, and starts the server. It's ready when you see output like:
+
+```
+Starting development server at http://0.0.0.0:8000/
+```
+
+### Open the app
+
+Go to `http://127.0.0.1:8000/` in your browser. (The `0.0.0.0` in the log output isn't an address you can browse to.) From here, follow step 10 above to register an account and start using the app.
+
+### (Optional) Create an admin superuser
+
+Open a second terminal in the project folder and run:
+
+```bash
+docker compose exec web python manage.py createsuperuser
+```
+
+### Everyday commands
+
+| Task | Command |
+|------|---------|
+| Stop the app | `Ctrl+C` in the terminal running it, then `docker compose down` (your data is kept) |
+| Start it again | `docker compose up` |
+| Start in the background | `docker compose up -d` |
+| View the app's output and logs | `docker compose logs -f web` |
+| Rebuild after changing code or settings | `docker compose up --build` |
+| Run the tests | `docker compose exec web python manage.py test` |
+| Stop and delete all data, including the database | `docker compose down -v` |
+
+Your code is copied into the image when it's built, so edits aren't picked up until you rebuild with `docker compose up --build`.
+
+The "article approved" and password-reset emails (see the notes below) print to the app container's output - in the terminal running `docker compose up`, or via `docker compose logs -f web` if you started it in the background.
+
+---
+
 ## Notes on email and the "approved article" API
 
 - **Password resets and "article approved" notifications currently print to your terminal** instead of sending real emails - this project uses Django's console email backend by default. To send real emails instead, edit the `# Email` section at the bottom of `settings.py`: set `EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'` and add `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, and `EMAIL_USE_TLS` for your email provider. `EMAIL_HOST_PASSWORD` is a real credential, so follow the same pattern as the database settings above: add it to `.env` and read it via `os.environ`, rather than writing it directly into `settings.py`.
@@ -198,3 +309,5 @@ The Django admin panel, if you created a superuser, is available at `http://127.
 ```bash
 python manage.py test
 ```
+
+If you're running with Docker, use `docker compose exec web python manage.py test` instead.
