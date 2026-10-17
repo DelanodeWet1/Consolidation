@@ -22,8 +22,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app/
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
+# Collect static files. manage.py imports settings.py, which requires
+# DJANGO_SECRET_KEY and DB_PASSWORD - but .env isn't available at build time
+# (it's dockerignored, and compose's env_file only applies when the container
+# runs). The placeholders below exist only for this one command: they aren't
+# stored in the image's environment and aren't used for anything real.
+RUN DJANGO_SECRET_KEY=build-only-placeholder DB_PASSWORD=build-only-placeholder \
+    python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
